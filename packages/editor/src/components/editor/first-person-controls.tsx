@@ -81,6 +81,8 @@ import {
   isOperationDoorType,
   toggleDoorOpenState,
 } from '../../lib/door-interaction'
+import { toggleHouseLights } from '../../lib/house-lights'
+import { playFootstep, playWalkSound, setFanHum, stopWalkAudio } from '../../lib/walk-audio'
 import { isTypingTarget } from '../../lib/typing-target'
 import {
   closeWindowOpenState,
@@ -173,6 +175,12 @@ const droneEuler = new Euler(0, 0, 0, 'YXZ')
 const droneForward = new Vector3()
 const droneRight = new Vector3()
 const droneDesiredVelocity = new Vector3()
+const fanPosition = new Vector3()
+
+/** Doors, windows and gates (mechanisms) thud as they move; lamps, appliances and lifts click. */
+function interactionSound(type: string): 'door' | 'switch' {
+  return type === 'door' || type === 'window' || type === 'mechanism' ? 'door' : 'switch'
+}
 const standClearanceRaycaster = new Raycaster()
 const standClearanceUp = new Vector3(0, 1, 0)
 const centerScreenPoint = new Vector2(0, 0)
@@ -1132,6 +1140,7 @@ export const FirstPersonControls = () => {
 
     const target = interactableTargetRef.current ?? resolveInteractableTarget()
     if (!target) return
+    playWalkSound(interactionSound(target.type))
     if (target.type === 'mechanism') {
       const node = useScene.getState().nodes[target.id]
       if (node) toggleNodeMechanism(node)
@@ -1220,6 +1229,7 @@ export const FirstPersonControls = () => {
 
     const target = interactableTargetRef.current ?? resolveInteractableTarget()
     if (!target) return
+    playWalkSound(interactionSound(target.type))
 
     if (target.type === 'mechanism') {
       const node = useScene.getState().nodes[target.id]
@@ -1534,6 +1544,11 @@ export const FirstPersonControls = () => {
         event.preventDefault()
         event.stopPropagation()
         closeInteractableTarget()
+      } else if (event.code === 'KeyL') {
+        // L switches every light in the project, house and garden, as the walk goes into the night.
+        event.preventDefault()
+        event.stopPropagation()
+        toggleHouseLights()
       } else if (event.code === 'KeyP') {
         // P toggles a cursor pause (advertised in the HUD): frees the pointer
         // without leaving first person — e.g. for an OS screenshot, which
@@ -1819,6 +1834,54 @@ export const FirstPersonControls = () => {
     }
     return standClearanceRaycaster.intersectObjects(meshes, false).length === 0
   }, [])
+
+  // Footsteps every stride walked, and the hum of the nearest running fan.
+  const strideRef = useRef<{ x: number; z: number; walked: number } | null>(null)
+  const humCheckRef = useRef(0)
+  useEffect(() => () => stopWalkAudio(), [])
+  useFrame((_, delta) => {
+    if (isDroneMode || suspendRef.current) {
+      strideRef.current = null
+      setFanHum(null)
+      return
+    }
+    const { x, z } = camera.position
+    const last = strideRef.current
+    if (last) {
+      const step = Math.hypot(x - last.x, z - last.z)
+      // A jump of metres in a frame is a teleport (a spawn, a level change), not a walk.
+      if (step < 1) last.walked += step
+      const running = movementInputRef.current.run === true
+      if (last.walked >= (running ? 0.95 : 0.75)) {
+        last.walked = 0
+        playFootstep(running)
+      }
+      last.x = x
+      last.z = z
+    } else {
+      strideRef.current = { x, z, walked: 0 }
+    }
+
+    humCheckRef.current -= delta
+    if (humCheckRef.current > 0) return
+    humCheckRef.current = 0.25
+    const { nodes } = useScene.getState()
+    const { items } = useInteractive.getState()
+    let nearest: number | null = null
+    for (const id of sceneRegistry.byType.item ?? []) {
+      const node = nodes[id as AnyNodeId]
+      const interactive = node?.type === 'item' ? node.asset.interactive : undefined
+      if (!interactive?.effects.some((effect) => effect.kind === 'animation')) continue
+      const toggle = interactive.controls.findIndex((control) => control.kind === 'toggle')
+      if (toggle < 0 || !items[id as AnyNodeId]?.controlValues[toggle]) continue
+      const object = sceneRegistry.nodes.get(id)
+      if (!object) continue
+      object.getWorldPosition(fanPosition)
+      const distance = fanPosition.distanceTo(camera.position)
+      if (nearest === null || distance < nearest) nearest = distance
+    }
+    setFanHum(nearest)
+  })
 
   // Drone: a free camera driven straight from the look angles — no controller,
   // no gravity or collision clamping. WASD move along the view axes, Space or E

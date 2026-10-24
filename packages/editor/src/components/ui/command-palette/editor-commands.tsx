@@ -17,6 +17,8 @@ import {
   Group,
   Hexagon,
   Layers,
+  Lightbulb,
+  LightbulbOff,
   Map,
   Maximize2,
   Minimize2,
@@ -38,6 +40,7 @@ import {
 import { useEffect } from 'react'
 import { addStoreyOnTop } from '../../../lib/add-storey'
 import { getHistoryCommandState, runRedo, runUndo } from '../../../lib/history'
+import { restoreHouseLights, setHouseLights } from '../../../lib/house-lights'
 import { deleteLevelWithFallbackSelection } from '../../../lib/level-selection'
 import { getSavedSceneDocument } from '../../../lib/scene'
 import { createUnitInBuilding, enterUnitFocus, leaveUnitFocus } from '../../../lib/units'
@@ -64,6 +67,9 @@ export function EditorCommands() {
       .map((n) => `${n.id}:${n.name ?? ''}`)
       .join('|'),
   )
+
+  // The lights as they were last left in this project.
+  useEffect(() => restoreHouseLights(), [])
 
   // Re-register when exportScene availability changes (it's a conditional action)
   useEffect(() => {
@@ -325,6 +331,22 @@ export function EditorCommands() {
         icon: <Sparkles className="h-4 w-4" />,
         keywords: ['rendered', 'shading', 'render', 'mode', 'quality'],
         execute: () => run(() => useViewer.getState().setShading('rendered')),
+      },
+      {
+        id: 'editor.viewer.lights-on',
+        label: 'Turn All Lights On',
+        group: 'Viewer Controls',
+        icon: <Lightbulb className="h-4 w-4" />,
+        keywords: ['lights', 'lamps', 'night', 'switch', 'on', 'garden', 'street'],
+        execute: () => run(() => setHouseLights(true)),
+      },
+      {
+        id: 'editor.viewer.lights-off',
+        label: 'Turn All Lights Off',
+        group: 'Viewer Controls',
+        icon: <LightbulbOff className="h-4 w-4" />,
+        keywords: ['lights', 'lamps', 'day', 'switch', 'off', 'garden', 'street'],
+        execute: () => run(() => setHouseLights(false)),
       },
       {
         id: 'editor.viewer.camera-snapshot',

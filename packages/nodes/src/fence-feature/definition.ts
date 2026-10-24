@@ -10,7 +10,13 @@ import {
 } from '@pascal-app/core'
 import type { FloorplanNodeExtension } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
-import { AnimationClip, type Object3D, QuaternionKeyframeTrack } from 'three'
+import {
+  AnimationClip,
+  type KeyframeTrack,
+  type Object3D,
+  QuaternionKeyframeTrack,
+  VectorKeyframeTrack,
+} from 'three'
 import { buildFenceFeatureFloorplan } from './floorplan'
 import { fenceFeatureAffordance } from './floorplan-affordances'
 import { buildFenceFeatureGeometry } from './geometry'
@@ -99,9 +105,21 @@ export const fenceGateDefinition: NodeDefinition<typeof FenceGateNode | typeof F
 }
 
 function bakeFenceGateClip(id: string, object: Object3D): AnimationClip | null {
-  const tracks: QuaternionKeyframeTrack[] = []
+  const tracks: KeyframeTrack[] = []
   object.traverse((part) => {
-    const marker = part.userData.pascalFenceGateLeaf as { openRotationY?: number } | undefined
+    const marker = part.userData.pascalFenceGateLeaf as
+      | {
+          openRotationY?: number
+          closedPosition?: [number, number, number]
+          openPosition?: [number, number, number]
+        }
+      | undefined
+    // A sliding leaf runs along the fence: its clip moves it instead of turning it.
+    const { closedPosition: shut, openPosition: slid } = marker ?? {}
+    if (shut && slid && Math.hypot(slid[0] - shut[0], slid[2] - shut[2]) > 1e-5) {
+      part.position.set(...shut)
+      tracks.push(new VectorKeyframeTrack(`${part.uuid}.position`, [0, 1], [...shut, ...slid]))
+    }
     if (typeof marker?.openRotationY !== 'number' || Math.abs(marker.openRotationY) < 1e-5) return
     part.rotation.y = 0
     const closed = part.quaternion.clone()

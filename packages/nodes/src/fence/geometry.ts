@@ -241,9 +241,13 @@ export function buildFenceGeometry(
 
   for (const leaf of gateLeaves) {
     const pivot = new Group()
-    pivot.position.set(leaf.hinge.x, 0, leaf.hinge.z)
+    pivot.position.set(leaf.hinge.x + leaf.offset.x, 0, leaf.hinge.z + leaf.offset.z)
     pivot.rotation.y = leaf.rotationY
-    pivot.userData.pascalFenceGateLeaf = { openRotationY: leaf.openRotationY }
+    pivot.userData.pascalFenceGateLeaf = {
+      openRotationY: leaf.openRotationY,
+      closedPosition: [leaf.hinge.x, 0, leaf.hinge.z],
+      openPosition: [leaf.hinge.x + leaf.openOffset.x, 0, leaf.hinge.z + leaf.openOffset.z],
+    }
     const mesh = new Mesh(
       leaf.geometry,
       getFenceSlotMaterial(

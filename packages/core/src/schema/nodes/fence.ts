@@ -41,6 +41,9 @@ export const FenceFeature = z.object({
   boardWidth: z.number().finite().min(0.02).max(0.3).optional(),
   hinge: z.enum(['left', 'right']).optional(),
   swing: z.enum(['inward', 'outward']).optional(),
+  // A sliding gate's leaves run along the fence, on the `swing` side, instead of turning on hinges;
+  // `openAngle` 90 is fully open. A double sliding gate parts in the middle.
+  operation: z.enum(['swing', 'slide']).optional(),
   openAngle: z.number().finite().min(0).max(170).optional(),
   leafSplit: z.number().finite().min(0.2).max(0.8).optional(),
   brace: z.enum(['none', 'diagonal', 'cross']).optional(),

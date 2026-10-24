@@ -34,6 +34,9 @@ export type FenceGateLeafGeometry = {
   hinge: { x: number; z: number }
   rotationY: number
   openRotationY: number
+  /** A sliding leaf's run along the fence, now and fully open (a swinging leaf's are zero). */
+  offset: { x: number; z: number }
+  openOffset: { x: number; z: number }
 }
 
 const MIN_CURVE_SEGMENT_LENGTH = 0.18
@@ -1522,11 +1525,15 @@ function cutFenceParts(
         )
       }
       if (gateLeafGeometries) {
+        const animated = animatedLeaves[leafIndex]!
+        const fullyOpen = fullyOpenLeaves[leafIndex]!
         gateLeafGeometries.push({
           geometry: mergeFenceParts(leafParts, heightAt),
           hinge: { x: leaf.hinge.x, z: leaf.hinge.y },
-          rotationY: -(animatedLeaves[leafIndex]!.rotation - leaf.rotation),
-          openRotationY: -(fullyOpenLeaves[leafIndex]!.rotation - leaf.rotation),
+          rotationY: -(animated.rotation - leaf.rotation),
+          openRotationY: -(fullyOpen.rotation - leaf.rotation),
+          offset: { x: animated.hinge.x - leaf.hinge.x, z: animated.hinge.y - leaf.hinge.y },
+          openOffset: { x: fullyOpen.hinge.x - leaf.hinge.x, z: fullyOpen.hinge.y - leaf.hinge.y },
         })
       } else {
         parts.infill.push(...leafParts)

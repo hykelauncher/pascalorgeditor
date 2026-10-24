@@ -67,4 +67,26 @@ describe('fence features', () => {
     const outward = getFenceGateLeaves(fence(), { ...feature, swing: 'outward' })[0]!
     expect(inward.end.y).toBeCloseTo(-outward.end.y)
   })
+  test('sliding leaves run along the fence beside it and part in the middle', () => {
+    const feature = {
+      ...gate(),
+      operation: 'slide' as const,
+      leafType: 'double' as const,
+      startT: 0.3,
+      endT: 0.5,
+      centerT: 0.4,
+    }
+    const closed = getFenceGateLeaves(fence(), { ...feature, openAngle: 0 })
+    const open = getFenceGateLeaves(fence(), { ...feature, openAngle: 90 })
+    for (const [index, leaf] of open.entries()) {
+      // Parallel to the fence, on the inward side, clear of the opening.
+      expect(leaf.rotation).toBeCloseTo(closed[index]!.rotation)
+      expect(leaf.hinge.y).toBeGreaterThan(0.05)
+      expect(closed[index]!.hinge.y).toBeCloseTo(0)
+    }
+    expect(Math.max(open[0]!.hinge.x, open[0]!.end.x)).toBeLessThanOrEqual(3)
+    expect(Math.min(open[1]!.hinge.x, open[1]!.end.x)).toBeGreaterThanOrEqual(5)
+    const outward = getFenceGateLeaves(fence(), { ...feature, openAngle: 90, swing: 'outward' })
+    expect(outward[0]!.hinge.y).toBeCloseTo(-open[0]!.hinge.y)
+  })
 })

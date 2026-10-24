@@ -92,17 +92,25 @@ export function getFenceGateLeaves(fence: FenceNode, feature: ResolvedFenceFeatu
   const usable = Math.max(0.05, length - 2 * gap)
   const double = feature.leafType === 'double'
   const split = feature.leafSplit ?? 0.5
-  const angle =
-    (((feature.openAngle ?? 0) * Math.PI) / 180) * (feature.swing === 'outward' ? -1 : 1)
+  const outward = feature.swing === 'outward' ? -1 : 1
+  const sliding = feature.operation === 'slide'
+  const angle = sliding ? 0 : (((feature.openAngle ?? 0) * Math.PI) / 180) * outward
+  // A sliding leaf parks beside the fence, past its hinge side, clear of the posts. It steps off the
+  // fence line over the first part of its travel, so closed it sits in the opening.
+  const open = sliding ? Math.min(Math.max((feature.openAngle ?? 0) / 90, 0), 1) : 0
+  const offset = (fence.postSize / 2 + 0.06) * Math.min(open / 0.15, 1) * outward
   return (double ? (['left', 'right'] as const) : [feature.hinge ?? 'left']).map((side) => {
     const sign = side === 'left' ? 1 : -1
-    const hinge =
-      side === 'left'
-        ? { x: a.x + ux * gap, y: a.y + uz * gap }
-        : { x: b.x - ux * gap, y: b.y - uz * gap }
     const width = double
       ? Math.max(0.025, usable * (side === 'left' ? split : 1 - split) - 0.015)
       : usable
+    const travel = -sign * (width + gap) * open
+    const hinge =
+      side === 'left'
+        ? { x: a.x + ux * (gap + travel), y: a.y + uz * (gap + travel) }
+        : { x: b.x - ux * (gap - travel), y: b.y - uz * (gap - travel) }
+    hinge.x -= uz * offset
+    hinge.y += ux * offset
     const closedAngle = Math.atan2(uz * sign, ux * sign)
     const rotation = closedAngle + angle * sign
     return {

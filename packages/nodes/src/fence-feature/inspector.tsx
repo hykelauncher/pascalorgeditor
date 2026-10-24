@@ -74,6 +74,15 @@ export function FenceFeatureEditor({
                   ],
                 },
                 {
+                  key: 'operation',
+                  label: 'Opens by',
+                  value: feature.operation ?? 'swing',
+                  options: [
+                    ['swing', 'Swinging'],
+                    ['slide', 'Sliding'],
+                  ],
+                },
+                {
                   key: 'hinge',
                   label: 'Hinge side',
                   value: feature.hinge ?? 'left',

@@ -3,6 +3,14 @@ import { type AnyNodeId, useLiveNodeOverrides, useScene } from '@pascal-app/core
 type GateAnimation = { frame: number; target: number }
 const animations = new Map<AnyNodeId, GateAnimation>()
 
+/** Whether the gate is open, or is swinging open: a running animation reports where it is going. */
+export function isFenceGateOpen(nodeId: AnyNodeId): boolean {
+  const running = animations.get(nodeId)
+  if (running) return running.target > 0
+  const node = useScene.getState().nodes[nodeId]
+  return node?.type === 'fence-gate' && (node.openAngle ?? 0) > 0.01
+}
+
 export function toggleFenceGate(nodeId: AnyNodeId) {
   const node = useScene.getState().nodes[nodeId]
   if (node?.type !== 'fence-gate') return

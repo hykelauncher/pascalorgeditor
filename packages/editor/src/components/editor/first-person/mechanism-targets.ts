@@ -76,6 +76,42 @@ function openScriptedDoors(): string {
  * there when it was last built. It fires at the toggle: the doorway is passable as the leaves
  * start to move, and solid again as they start to close.
  */
+/** The mounted fence gates and their saved open angles. */
+function fenceGateAngles(): string {
+  const nodes = useScene.getState().nodes
+  const angles: string[] = []
+  for (const id of sceneRegistry.byType['fence-gate'] ?? []) {
+    const node = nodes[id as AnyNodeId]
+    if (node?.type === 'fence-gate') angles.push(`${id}:${node.openAngle ?? 0}`)
+  }
+  return angles.sort().join(',')
+}
+
+/**
+ * Calls `onChange` when a mounted fence gate's saved angle changes: its swing (E, in the
+ * walkthrough or the editor) ends by committing the angle. The swing itself is a live pose the
+ * collider does not follow, so the gateway turns passable or solid when the leaves come to rest.
+ * The call waits two frames, for the gate's geometry to be rebuilt from the new angle.
+ */
+export function watchFenceGates(onChange: () => void): () => void {
+  let known = fenceGateAngles()
+  let frame = 0
+  const unsubscribe = useScene.subscribe((state, previous) => {
+    if (state.nodes === previous.nodes) return
+    const next = fenceGateAngles()
+    if (next === known) return
+    known = next
+    window.cancelAnimationFrame(frame)
+    frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(onChange)
+    })
+  })
+  return () => {
+    window.cancelAnimationFrame(frame)
+    unsubscribe()
+  }
+}
+
 export function watchScriptedDoors(onChange: () => void): () => void {
   let known = openScriptedDoors()
   return useInteractive.subscribe((state, previous) => {

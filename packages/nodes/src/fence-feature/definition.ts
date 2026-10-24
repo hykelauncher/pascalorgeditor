@@ -17,6 +17,7 @@ import { buildFenceFeatureGeometry } from './geometry'
 import { fenceFeatureHandles } from './handles'
 import { FenceFeatureEditor } from './inspector'
 import { toggleFenceGate } from './interaction'
+import { fenceGateMechanism } from './mechanism'
 import { createFenceFeatureMoveSession } from './move-session'
 
 const floorplanMoveTarget: FloorplanMoveTarget<FenceFeatureNode> = ({ node, sceneApi }) => {
@@ -69,6 +70,7 @@ const shared = {
 export const fenceGateDefinition: NodeDefinition<typeof FenceGateNode | typeof FenceOpeningNode> = {
   ...shared,
   kind: 'fence-gate',
+  capabilities: { ...shared.capabilities, mechanism: fenceGateMechanism },
   keyboardActions: {
     e: {
       appliesTo: (node) => node.type === 'fence-gate',

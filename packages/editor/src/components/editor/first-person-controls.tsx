@@ -103,6 +103,7 @@ import {
   mechanismHudInteract,
   mechanismTargetIds,
   nativeOpeningIds,
+  watchFenceGates,
   watchScriptedDoors,
 } from './first-person/mechanism-targets'
 
@@ -1309,10 +1310,12 @@ export const FirstPersonControls = () => {
     emitter.on('window:animation-completed', rebuildColliderWorld)
     // A door built from a script opens by its model's clip, which reports no animation end.
     const stopWatching = watchScriptedDoors(rebuildColliderWorld)
+    const stopWatchingGates = watchFenceGates(rebuildColliderWorld)
     return () => {
       emitter.off('door:animation-completed', rebuildColliderWorld)
       emitter.off('window:animation-completed', rebuildColliderWorld)
       stopWatching()
+      stopWatchingGates()
     }
   }, [isDroneMode, rebuildColliderWorld])
 

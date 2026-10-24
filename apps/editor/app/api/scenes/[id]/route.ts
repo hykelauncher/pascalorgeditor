@@ -28,6 +28,12 @@ const putSceneSchema = z.object({
    * wipe is silent while the deletion is recoverable from scene_revisions.
    */
   force: z.boolean().optional(),
+  /**
+   * Also publish the saved graph on the live scene feed, as an agent's change is, so open editors
+   * load it (the assistant panel's undo). An editor's own autosave leaves it off: it already
+   * holds what it saved.
+   */
+  announce: z.boolean().optional(),
 })
 
 const patchSceneSchema = z.object({
@@ -125,6 +131,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         parsed.data.thumbnailUrl === undefined ? existing.thumbnailUrl : parsed.data.thumbnailUrl,
       expectedVersion: expectedVersion ?? existing.version,
     })
+    if (parsed.data.announce) {
+      await operations
+        .appendSceneEvent({
+          sceneId: id,
+          version: meta.version,
+          kind: 'restore',
+          graph: parsed.data.graph as never,
+        })
+        .catch(() => null)
+    }
     return sceneApiJson(request, meta, {
       headers: { ETag: `"${meta.version}"` },
     })

@@ -169,6 +169,19 @@ test('does not treat prose or drive paths as URLs', () => {
   }
 })
 
+// Streetscape keys the lamps and signs it generates along a road with ids like
+// these; a road with them could not be saved while they read as URLs.
+test('does not treat namespaced part ids as URLs, but still checks script schemes', () => {
+  for (const id of ['roadside:regular-lighting:e1:right:6.00', 'roadside:terminal-signage:e1:right:31.00']) {
+    const graph = buildGraph({ [TREE_ID]: pluginTree({ config: { parts: { [id]: { id } } } }) })
+    expect(apiGraphSchema.safeParse(graph).success, `expected ${id} to be accepted`).toBe(true)
+  }
+  for (const url of ['javascript:a:b', 'data:a:b:c', 'about:blank']) {
+    const graph = buildGraph({ [TREE_ID]: pluginTree({ config: { src: url } }) })
+    expect(apiGraphSchema.safeParse(graph).success, `expected ${url} to be rejected`).toBe(false)
+  }
+})
+
 // A recursive walk over untrusted JSON must not throw past `safeParse` — the
 // route would answer 500 where the contract is a 400 with issues.
 test('reports deeply nested plugin nodes as a validation issue, not a crash', () => {

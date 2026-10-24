@@ -13,7 +13,7 @@ import {
 import { PascalWebXRButton } from '@webxr/plugin/pascal-editor'
 import { Hammer, Layers, Package, Palette, Settings, Sparkles } from 'lucide-react'
 import Image from 'next/image'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PoolSectionBanner } from '@/components/pool-section-banner'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
@@ -193,7 +193,6 @@ function SceneEditor({ initialScene, meta: initialMeta }: SceneLoaderProps) {
   const vr = useWebXRFeature()
   useLocalArtifactStore()
   useThumbnailAutosave({ sceneId: meta.id, enabled: true })
-  const router = useRouter()
   const searchParams = useSearchParams()
   const versionRef = useRef(meta.version)
   // Node count of the graph the server is known to hold. Guards against the
@@ -265,6 +264,7 @@ function SceneEditor({ initialScene, meta: initialMeta }: SceneLoaderProps) {
       }
 
       pendingGraphSignaturesRef.current.add(graphJson)
+      const sentVersion = versionRef.current
       try {
         const response = await fetch(`/api/scenes/${meta.id}`, {
           method: 'PUT',
@@ -291,6 +291,9 @@ function SceneEditor({ initialScene, meta: initialMeta }: SceneLoaderProps) {
             setSaveError('Autosave blocked: the editor tried to save an empty scene')
             return
           }
+          // The write that beat this save (the assistant's, another tab's) already reached the
+          // editor over the live connection and replaced its scene: nothing is left to reload.
+          if (versionRef.current > sentVersion) return
           setConflict(true)
           return
         }
@@ -373,7 +376,9 @@ function SceneEditor({ initialScene, meta: initialMeta }: SceneLoaderProps) {
           <div className="mt-3 flex items-center gap-2">
             <button
               className="rounded-lg bg-primary px-3 py-1.5 font-medium text-primary-foreground text-xs hover:bg-primary/90"
-              onClick={() => router.refresh()}
+              // A full load: `router.refresh()` keeps this editor mounted with the version it
+              // loaded, so its next autosave was refused again and the prompt came back.
+              onClick={() => window.location.reload()}
               type="button"
             >
               Reload

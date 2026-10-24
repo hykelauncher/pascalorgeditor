@@ -54,8 +54,15 @@ const MAX_SCAN_VALUES = 50_000
 // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping C0 controls is the point — browsers ignore them mid-scheme.
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/g
 const SCHEME = /^[a-z][a-z0-9+.-]+:[^\s]/i
+// Plugins key their generated parts with colon-joined ids (streetscape's
+// `roadside:regular-lighting:e1:right:6.00`): three or more plain segments, no
+// slash, query or call. A URL is never written that way, except a script one
+// spelling an expression, so those schemes are checked whatever their shape.
+const NAMESPACED_ID = /^[a-z][\w.-]*(?::[\w.-]+){2,}$/i
+const SCRIPT_SCHEME = /^(?:javascript|vbscript|livescript|data|file|blob):/i
 function isUrlShaped(value: string): boolean {
   const bare = value.replace(CONTROL_CHARS, '').trimStart()
+  if (NAMESPACED_ID.test(bare) && !SCRIPT_SCHEME.test(bare)) return false
   return SCHEME.test(bare) || bare.startsWith('//')
 }
 

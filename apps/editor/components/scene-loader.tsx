@@ -11,7 +11,7 @@ import {
   type SidebarTab,
 } from '@pascal-app/editor'
 import { PascalWebXRButton } from '@webxr/plugin/pascal-editor'
-import { Hammer, Layers, Package, Palette, Settings } from 'lucide-react'
+import { Hammer, Layers, Package, Palette, Settings, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -24,6 +24,7 @@ import {
   sceneGraphSignature,
 } from '@/lib/scene-signature'
 import { useThumbnailAutosave } from '@/lib/use-thumbnail-autosave'
+import { AssistantPanel } from './assistant-panel'
 import { BuildTab } from './build-tab'
 import { EditorNavbar } from './editor-navbar'
 import { KitchenCommands } from './kitchen-browser'
@@ -115,6 +116,14 @@ const SIDEBAR_TABS: (SidebarTab & { component: React.ComponentType })[] = [
         width={32}
       />
     ),
+  },
+  {
+    id: 'assistant',
+    label: 'Assistant',
+    component: AssistantPanel,
+    mobileDefaultSnap: 0.75,
+    mobileIcon: <Sparkles className="h-5 w-5" />,
+    icon: <Sparkles className="h-6 w-6 text-violet-400" />,
   },
   {
     id: 'settings',

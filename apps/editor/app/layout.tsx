@@ -34,7 +34,8 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${GeistPixelSquare.variable} ${barlow.variable}`}
       lang="en"
     >
-      <body className="font-sans">
+      {/* Extensions such as Grammarly add attributes to <body> before hydration. */}
+      <body className="font-sans" suppressHydrationWarning>
         <ClientBootstrap enableDevDiagnostics={enableDevDiagnostics}>{children}</ClientBootstrap>
         {enableDevDiagnostics && <Agentation />}
       </body>

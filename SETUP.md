@@ -34,6 +34,9 @@ cp .env.example .env
 | `PASCAL_AUTH` | No | `proxy` lets a reverse proxy that already authenticates every request replace the password. |
 | `PASCAL_SCENE_API_TOKEN` | No | Bearer token for agents and scripts calling `/api/scenes`. |
 | `PASCAL_DATA_DIR` | No | Directory holding `pascal.db` and artifacts (default: `~/.pascal/data`). |
+| `AI_GATEWAY_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY` | For the Assistant tab | A key for any one provider enables the in-editor assistant; its model picker lists every provider with a key. A running local [Ollama](https://ollama.com) (`OLLAMA_BASE_URL`, default `http://127.0.0.1:11434`) adds its models without a key. |
+| `PASCAL_ASSISTANT_MODEL` | No | Default assistant model as `<provider>:<model>`, e.g. `google:auto`, which spreads requests across the free Gemini Flash models. |
+| `PASCAL_ASSISTANT_MODELS` | No | Extra picker entries, comma separated, in the same form. |
 
 Local development and the official hosted editor work without any environment variables.
 
